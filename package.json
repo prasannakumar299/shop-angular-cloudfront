@@ -42,6 +42,7 @@
     "@commitlint/config-conventional": "^19.0.3",
     "@types/jasmine": "^5.1.4",
     "@types/node": "^18.19.22",
+    "@types/uuid": "^11.0.0",
     "@typescript-eslint/eslint-plugin": "^7.2.0",
     "@typescript-eslint/parser": "^7.2.0",
     "eslint": "^8.53.0",
