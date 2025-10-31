@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import * as cdk from 'aws-cdk-lib';
 import { TodoStack } from '../lib/todo-stack';
+import { ProductsStack } from '../lib/task4-products/products-stack';
 
 const app = new cdk.App();
 new TodoStack(app, 'TodoStack', {
@@ -15,3 +16,5 @@ new TodoStack(app, 'TodoStack', {
   // env: { account: '123456789012', region: 'us-east-1' },
   /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
 });
+
+new ProductsStack(app, 'ProductsStack', {});
