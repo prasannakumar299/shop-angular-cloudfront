@@ -1,4 +1,4 @@
-import { Component, model, output } from '@angular/core';
+import { Component, model, OnInit, output } from '@angular/core';
 import { MatButton } from '@angular/material/button';
 
 @Component({
@@ -8,10 +8,13 @@ import { MatButton } from '@angular/material/button';
   standalone: true,
   imports: [MatButton],
 })
-export class FilePickerComponent {
+export class FilePickerComponent implements OnInit {
   uploadClick = output();
 
   file = model<File>();
+  ngOnInit(): void {
+    this.file.set({ name: 'productManufacturing' } as File);
+  }
 
   selectFile(files: FileList | null): void {
     if (!files?.length) {
