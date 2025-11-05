@@ -6,7 +6,7 @@ import { Construct } from 'constructs';
 import * as path from 'path';
 import * as apigw from 'aws-cdk-lib/aws-apigateway';
 import * as lambdaEventSources from 'aws-cdk-lib/aws-lambda-event-sources';
-
+import * as sqs from 'aws-cdk-lib/aws-sqs';
 export class ImportServiceStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
@@ -23,6 +23,11 @@ export class ImportServiceStack extends cdk.Stack {
           allowedHeaders: ['*'],
         },
       ],
+    });
+
+    // Create SQS queue for catalog items
+    const catalogItemsQueue = new sqs.Queue(this, 'CatalogItemsQueue', {
+      queueName: 'catalog-items-queue',
     });
 
     const importProductsFile = new lambdaNodejs.NodejsFunction(
@@ -59,11 +64,13 @@ export class ImportServiceStack extends cdk.Stack {
         runtime: cdk.aws_lambda.Runtime.NODEJS_20_X,
         environment: {
           BUCKET_NAME: importBucket.bucketName,
+          SQS_URL: catalogItemsQueue.queueUrl,
         },
       },
     );
 
     importBucket.grantRead(importFileParser);
+    catalogItemsQueue.grantSendMessages(importFileParser);
 
     // Configure S3 event trigger for 'uploaded/' folder
     importFileParser.addEventSource(
