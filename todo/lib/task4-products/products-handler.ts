@@ -5,7 +5,10 @@ import {
   GetItemCommand,
 } from '@aws-sdk/client-dynamodb';
 import { v4 as uuidv4 } from 'uuid';
+import { SQSEvent, SQSRecord } from 'aws-lambda';
+import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
 const dynamoDB = new DynamoDBClient({ region: process.env.AWS_REGION });
+const sns = new SNSClient({});
 
 const products = [
   {
@@ -234,5 +237,56 @@ export const createProduct = async (event: { body?: string }) => {
       statusCode: 500,
       body: JSON.stringify({ message: 'Internal server error' }),
     };
+  }
+};
+
+// Lambda to process SQS messages and add products to DynamoDB
+export const catalogBatchProcess = async (event: SQSEvent) => {
+  try {
+    for (const record of event.Records) {
+      console.log('🔹 Raw record body:', record.body);
+    }
+
+    const putPromises = event.Records.map(async (record: SQSRecord) => {
+      let body;
+
+      try {
+        body = JSON.parse(record.body);
+      } catch (err) {
+        console.error('❌ JSON parse failed for:', record.body);
+        throw err;
+      }
+
+      console.log('✅ Parsed message:', body);
+
+      const params = {
+        TableName: process.env.PRODUCTS_TABLE,
+        Item: {
+          id: { S: body.id },
+          title: { S: body.title },
+          description: { S: body.description },
+          price: { N: String(body.price) },
+        },
+      };
+
+      await dynamoDB.send(new PutItemCommand(params));
+      console.log(`Product ${body.title} added`);
+      // After all products are added, send SNS notifications
+      await sns.send(
+        new PublishCommand({
+          TopicArn: process.env.CREATE_PRODUCT_TOPIC_ARN!,
+          Subject: 'New Product Created',
+          Message: JSON.stringify(body, null, 2),
+        }),
+      );
+
+      console.log(`📨 Notification sent for product: ${body.title}`);
+    });
+
+    await Promise.all(putPromises);
+    console.log('Batch processed successfully');
+  } catch (err) {
+    console.error('Error processing batch:', err);
+    throw err;
   }
 };
