@@ -12,6 +12,7 @@ interface PresignedUrlResponse {
 
 @Injectable()
 export class ManageProductsService extends ApiService {
+  authorization_token = localStorage.getItem('authorization_token');
   uploadProductsCSV(file: File): Observable<unknown> {
     if (!this.endpointEnabled('import')) {
       console.warn(
@@ -26,6 +27,7 @@ export class ManageProductsService extends ApiService {
           headers: {
             // eslint-disable-next-line @typescript-eslint/naming-convention
             'Content-Type': 'text/csv',
+            Authorization: `Basic ${this.authorization_token}`,
           },
           withCredentials: false,
         });
